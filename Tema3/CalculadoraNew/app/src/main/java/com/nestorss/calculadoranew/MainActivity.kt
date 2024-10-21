@@ -53,9 +53,10 @@ class MainActivity : ComponentActivity() {
                                 navController
                             )
                         }
-                        composable("Calculadora") {
+                        composable("Calculadora/{usuario}") { backStackEntry ->
                             PantallaCalculadora (
-                                navController
+                                navController,
+                                backStackEntry.arguments?.getString("usuario")
                             )
                         }
                     }
@@ -80,13 +81,13 @@ fun PantallaLogin(navController: NavController) {
         Spacer(modifier = Modifier.weight(0.00001f))
 
         // TextFields: usuario y contraseña
-        var text by rememberSaveable { mutableStateOf("") }
+        var usuario by rememberSaveable { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
 
         // Usuario
         TextField(
-            value = text,
-            onValueChange = { text = it },
+            value = usuario,
+            onValueChange = { usuario = it },
             label = { Text("Usuario") },
         )
 
@@ -108,8 +109,8 @@ fun PantallaLogin(navController: NavController) {
         // Boton: boton de acceso a la calculadora
         Button(
             onClick = {
-                if (text == "nestorss" && password == "nestorss") {
-                    navController.navigate("Calculadora")
+                if (usuario == "nestorss" && password == "nestorss") {
+                    navController.navigate("Calculadora/$usuario")
                 } else {
                     toaster(context, 1)
                 }
@@ -131,7 +132,7 @@ fun PantallaLogin(navController: NavController) {
 }
 
 @Composable
-fun PantallaCalculadora(navController: NavController) {
+fun PantallaCalculadora(navController: NavController, usuario: String?) {
 
     // var context: contexto de la aplicacion
     val context = LocalContext.current
@@ -143,7 +144,7 @@ fun PantallaCalculadora(navController: NavController) {
     ) {
         Spacer(modifier = Modifier.weight(0.00001f))
         Text(
-            text = "Usuario",
+            text = usuario.toString(),
             fontSize = 40.sp,
             color = Color.Black
         )
