@@ -57,7 +57,7 @@ class MainActivity : ComponentActivity() {
                             navController
                         )
                     }
-                    composable("Gano/{ganador}/{puntosJ1}/{puntosCPU}") { backStackEntry ->
+                    composable("Gano/{ganador}") { backStackEntry ->
                         backStackEntry.arguments?.getString("ganador")?.let {
                             Gano (
                                 navController,
