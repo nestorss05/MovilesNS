@@ -9,5 +9,5 @@ data class TareaEntity(
     var id: Long = 0,
     var resultadoJ1: Int = 0,
     var resultadoJ2: Int = 0,
-    var ganador: Int = 0
+    var ganador: String = ""
 )

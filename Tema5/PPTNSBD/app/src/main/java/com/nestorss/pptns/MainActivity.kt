@@ -20,7 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,8 +34,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
+import com.nestorss.pptns.MainActivity.Companion.database
 import com.nestorss.pptns.dal.TareasDatabase
+import com.nestorss.pptns.dal.TareaEntity
 import com.nestorss.pptns.ui.theme.PPTNSTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
@@ -112,14 +116,14 @@ fun Main(navController: NavController) {
 @Composable
 fun Juego(navController: NavController) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     var puntosJ1 by rememberSaveable { mutableIntStateOf(0) }
     var puntosCPU by rememberSaveable { mutableIntStateOf(0) }
     var partidas by rememberSaveable { mutableIntStateOf(0) }
     var eleccionJ1 by rememberSaveable { mutableIntStateOf(0) }
     var eleccionCPU by rememberSaveable { mutableIntStateOf(0) }
-    var idImage by rememberSaveable { mutableStateOf(R.drawable.blank)}
+    var idImage by rememberSaveable { mutableIntStateOf(R.drawable.blank) }
     var res by rememberSaveable { mutableIntStateOf(0) }
-    var ganador by rememberSaveable { mutableStateOf("")}
 
     Column (
         modifier = Modifier.fillMaxWidth(),
@@ -174,8 +178,7 @@ fun Juego(navController: NavController) {
                             }
                             partidas++
                             if (partidas == 5) {
-                                ganador = declararGanador(puntosJ1, puntosCPU)
-                                navController.navigate("Gano/$ganador")
+                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope)
                             }
                         },
                         modifier = Modifier.padding(16.dp) .size(64.dp),
@@ -199,8 +202,7 @@ fun Juego(navController: NavController) {
                             }
                             partidas++
                             if (partidas == 5) {
-                                ganador = declararGanador(puntosJ1, puntosCPU)
-                                navController.navigate("Gano/$ganador")
+                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope)
                             }
                         },
                         modifier = Modifier.padding(16.dp) .size(64.dp),
@@ -224,8 +226,7 @@ fun Juego(navController: NavController) {
                             }
                             partidas++
                             if (partidas == 5) {
-                                ganador = declararGanador(puntosJ1, puntosCPU)
-                                navController.navigate("Gano/$ganador")
+                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope)
                             }
                         },
                         modifier = Modifier.padding(16.dp) .size(64.dp),
@@ -271,7 +272,7 @@ fun Gano(navController: NavController, ganador: String) {
 }
 
 private fun cambiarImagen(eleccionCPU: Int): Int {
-    var idImage: Int
+    val idImage: Int
     if (eleccionCPU == 0) {
         idImage = R.drawable.piedra
     } else if (eleccionCPU == 1) {
@@ -316,6 +317,23 @@ private fun declararGanador(puntosJ1: Int, puntosCPU: Int): String {
         ganador = "Nadie"
     }
     return ganador
+}
+
+private fun declararFila(puntosJ1: Int, puntosCPU: Int, ganador: String): TareaEntity {
+    val partida = TareaEntity()
+    partida.resultadoJ1 = puntosJ1
+    partida.resultadoJ2 = puntosCPU
+    partida.ganador = ganador
+    return partida
+}
+
+private fun prepararGanador(puntosJ1: Int, puntosCPU: Int, navController: NavController, coroutineScope: CoroutineScope) {
+    val ganador = declararGanador(puntosJ1, puntosCPU)
+    val partida = declararFila(puntosJ1, puntosCPU, ganador)
+    coroutineScope.launch {
+        database.tareaDao().insertar(partida)
+    }
+    navController.navigate("Gano/$ganador")
 }
 
 private fun toaster(context: android.content.Context, code: Int) {

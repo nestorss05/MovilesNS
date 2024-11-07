@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "672fd49f7c27fd7338016919e46860e8",
+    "identityHash": "378aef8b88c6442d0874369ae7f17eda",
     "entities": [
       {
         "tableName": "partidas",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `resultadoJ1` INTEGER NOT NULL, `resultadoJ2` INTEGER NOT NULL, `ganador` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `resultadoJ1` INTEGER NOT NULL, `resultadoJ2` INTEGER NOT NULL, `ganador` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -29,7 +29,7 @@
           {
             "fieldPath": "ganador",
             "columnName": "ganador",
-            "affinity": "INTEGER",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -46,7 +46,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '672fd49f7c27fd7338016919e46860e8')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '378aef8b88c6442d0874369ae7f17eda')"
     ]
   }
 }
