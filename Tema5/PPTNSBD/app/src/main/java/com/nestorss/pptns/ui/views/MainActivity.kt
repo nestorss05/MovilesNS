@@ -60,7 +60,9 @@ class MainActivity : ComponentActivity() {
             applicationContext,
             TareasDatabase::class.java,
             "tareas-db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
         enableEdgeToEdge()
         setContent {
             val tareasViewModel: TareasVM = viewModel(
@@ -77,17 +79,14 @@ class MainActivity : ComponentActivity() {
                             navController
                         )
                     }
-                    composable("Juego") {
-                        Juego (
-                            navController
-                        )
+                    composable("Juego/{nombreJugador}") { backStackEntry ->
+                        backStackEntry.arguments?.getString("nombreJugador")?.let {
+                            nombreJugador -> Juego ( navController, nombreJugador )
+                        }
                     }
                     composable("Gano/{ganador}") { backStackEntry ->
                         backStackEntry.arguments?.getString("ganador")?.let {
-                            Gano (
-                                navController,
-                                it
-                            )
+                            ganador -> Gano( navController, ganador )
                         }
                     }
                     composable("Puntuaciones") {
@@ -102,6 +101,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun Main(navController: NavController) {
     var text by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
     Column (
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
@@ -112,6 +112,7 @@ fun Main(navController: NavController) {
             text = "Piedra, papel o tijera",
             fontSize = 32.sp
         )
+        Spacer(modifier = Modifier.height(16.dp))
         TextField(
             value = text,
             onValueChange = { text = it },
@@ -119,7 +120,11 @@ fun Main(navController: NavController) {
         )
         Button(
             onClick = {
-                navController.navigate("Juego")
+                if (!text.equals("")) {
+                    navController.navigate("Juego/$text")
+                } else {
+                    toaster(context, -2);
+                }
             },
             modifier = Modifier.padding(16.dp),
         ) {
@@ -134,7 +139,7 @@ fun Main(navController: NavController) {
 }
 
 @Composable
-fun Juego(navController: NavController) {
+fun Juego(navController: NavController, nombreJugador: String) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var puntosJ1 by rememberSaveable { mutableIntStateOf(0) }
@@ -198,7 +203,7 @@ fun Juego(navController: NavController) {
                             }
                             partidas++
                             if (partidas == 5) {
-                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope)
+                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope, nombreJugador)
                             }
                         },
                         modifier = Modifier.padding(16.dp) .size(64.dp),
@@ -222,7 +227,7 @@ fun Juego(navController: NavController) {
                             }
                             partidas++
                             if (partidas == 5) {
-                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope)
+                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope, nombreJugador)
                             }
                         },
                         modifier = Modifier.padding(16.dp) .size(64.dp),
@@ -246,7 +251,7 @@ fun Juego(navController: NavController) {
                             }
                             partidas++
                             if (partidas == 5) {
-                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope)
+                                prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope, nombreJugador)
                             }
                         },
                         modifier = Modifier.padding(16.dp) .size(64.dp),
@@ -345,8 +350,8 @@ fun Puntuaciones(navController: NavController, tareasVM: TareasVM) {
 @Composable
 fun TareaItem(tarea: TareaEntity) {
     ListItem(
-        headlineContent = { Text("Ganador: ${tarea.ganador}") },
-        supportingContent = { Text("Resultado J1: ${tarea.resultadoJ1}, Resultado J2: ${tarea.resultadoJ2}") }
+        headlineContent = { Text("Usuario: ${tarea.username}") },
+        supportingContent = { Text("Partidas jugadas: ${tarea.partidasJugadas}, Partidas ganadas: ${tarea.partidasGanadas}") }
     )
 }
 
@@ -386,10 +391,10 @@ private fun jugada(eleccionJ1: Int, eleccionCPU: Int): Int {
     return res
 }
 
-private fun declararGanador(puntosJ1: Int, puntosCPU: Int): String {
+private fun declararGanador(puntosJ1: Int, puntosCPU: Int, username: String): String {
     var ganador = ""
     if (puntosJ1 > puntosCPU) {
-        ganador = "Jugador 1"
+        ganador = username
     } else if (puntosCPU > puntosJ1) {
         ganador = "CPU"
     } else {
@@ -398,19 +403,27 @@ private fun declararGanador(puntosJ1: Int, puntosCPU: Int): String {
     return ganador
 }
 
-private fun declararFila(puntosJ1: Int, puntosCPU: Int, ganador: String): TareaEntity {
+private fun declararFila(puntosJ1: Int, puntosCPU: Int, username: String): TareaEntity {
     val partida = TareaEntity()
-    partida.resultadoJ1 = puntosJ1
-    partida.resultadoJ2 = puntosCPU
-    partida.ganador = ganador
+    partida.username = username
+    partida.partidasJugadas += 1
+    if (puntosJ1 > puntosCPU) {
+        partida.partidasGanadas += 1
+    }
     return partida
 }
 
-private fun prepararGanador(puntosJ1: Int, puntosCPU: Int, navController: NavController, coroutineScope: CoroutineScope) {
-    val ganador = declararGanador(puntosJ1, puntosCPU)
-    val partida = declararFila(puntosJ1, puntosCPU, ganador)
+private fun prepararGanador(puntosJ1: Int, puntosCPU: Int, navController: NavController, coroutineScope: CoroutineScope, username: String) {
+    val ganador = declararGanador(puntosJ1, puntosCPU, username)
+    val partida = declararFila(puntosJ1, puntosCPU, username)
     coroutineScope.launch {
-        database.tareaDao().insertar(partida)
+        val resultados = database.tareaDao().getNombre(username)
+        if (resultados.isEmpty()) {
+            database.tareaDao().insertar(partida)
+        } else {
+            database.tareaDao().actualizar(partida)
+        }
+
     }
     navController.navigate("Gano/$ganador")
 }
@@ -426,6 +439,9 @@ private fun toaster(context: android.content.Context, code: Int) {
         }
         -1 -> {
             mensaje = "Lo sentimos, has perdido."
+        }
+        -2 -> {
+            mensaje = "ERROR: nombre de usuario vacio (0x02)"
         }
     }
     Toast.makeText(context, mensaje, Toast.LENGTH_SHORT).show()

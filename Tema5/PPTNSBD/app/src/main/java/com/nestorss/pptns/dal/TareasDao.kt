@@ -17,6 +17,9 @@ public interface TareasDao {
     @Update
     suspend fun actualizar(tarea: TareaEntity)
 
+    @Query("SELECT * FROM partidas WHERE username = :user")
+    suspend fun getNombre(user: String): List<TareaEntity>
+
     @Query("DELETE FROM PARTIDAS")
     suspend fun borrarTodo()
 }

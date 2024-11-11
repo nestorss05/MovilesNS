@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class TareaEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0,
-    var resultadoJ1: Int = 0,
-    var resultadoJ2: Int = 0,
-    var ganador: String = ""
+    var username: String = "",
+    var partidasJugadas: Int = 0,
+    var partidasGanadas: Int = 0
 )
