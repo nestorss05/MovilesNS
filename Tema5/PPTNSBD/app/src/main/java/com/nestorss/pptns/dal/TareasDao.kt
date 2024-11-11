@@ -6,8 +6,6 @@ import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Update;
 
-import java.util.List;
-
 @Dao
 public interface TareasDao {
     @Query("SELECT * FROM partidas")
@@ -18,4 +16,7 @@ public interface TareasDao {
 
     @Update
     suspend fun actualizar(tarea: TareaEntity)
+
+    @Query("DELETE FROM PARTIDAS")
+    suspend fun borrarTodo()
 }

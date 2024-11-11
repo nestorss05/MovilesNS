@@ -1,4 +1,4 @@
-package com.nestorss.pptns
+package com.nestorss.pptns.ui.views
 
 import android.os.Bundle
 import android.widget.Toast
@@ -14,12 +14,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -29,12 +35,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
-import com.nestorss.pptns.MainActivity.Companion.database
+import com.nestorss.pptns.R
+import com.nestorss.pptns.ui.views.MainActivity.Companion.database
 import com.nestorss.pptns.dal.TareasDatabase
 import com.nestorss.pptns.dal.TareaEntity
 import com.nestorss.pptns.ui.theme.PPTNSTheme
@@ -55,6 +63,9 @@ class MainActivity : ComponentActivity() {
         ).build()
         enableEdgeToEdge()
         setContent {
+            val tareasViewModel: TareasVM = viewModel(
+                factory = TareasViewModelFactory(database.tareaDao())
+            )
             PPTNSTheme {
                 val navController = rememberNavController()
                 NavHost(
@@ -79,6 +90,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                     }
+                    composable("Puntuaciones") {
+                        Puntuaciones(navController = navController, tareasVM = tareasViewModel)
+                    }
                 }
             }
         }
@@ -87,6 +101,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun Main(navController: NavController) {
+    var text by rememberSaveable { mutableStateOf("") }
     Column (
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
@@ -96,6 +111,11 @@ fun Main(navController: NavController) {
         Text(
             text = "Piedra, papel o tijera",
             fontSize = 32.sp
+        )
+        TextField(
+            value = text,
+            onValueChange = { text = it },
+            label = { Text("Jugador") },
         )
         Button(
             onClick = {
@@ -267,8 +287,67 @@ fun Gano(navController: NavController, ganador: String) {
                 fontSize = 18.sp,
             )
         }
+        Button(
+            onClick = {
+                navController.navigate("Puntuaciones")
+            },
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = "Puntuaciones maximas",
+                fontSize = 18.sp,
+            )
+        }
         Spacer(modifier = Modifier.weight(0.00001f))
     }
+}
+
+@Composable
+fun Puntuaciones(navController: NavController, tareasVM: TareasVM) {
+    val tareas by tareasVM.todasLasTareas.collectAsState()
+    Column (
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.weight(0.00001f))
+        LazyColumn {
+            items(tareas) { tarea ->
+                TareaItem(tarea)
+            }
+        }
+        Button(
+            onClick = {
+                tareasVM.borrarTodasLasTareas()
+            },
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = "Borrar records",
+                fontSize = 18.sp,
+            )
+        }
+        Button(
+            onClick = {
+                navController.navigate("Inicio")
+            },
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = "Volver al inicio",
+                fontSize = 18.sp,
+            )
+        }
+        Spacer(modifier = Modifier.weight(0.00001f))
+    }
+}
+
+@Composable
+fun TareaItem(tarea: TareaEntity) {
+    ListItem(
+        headlineContent = { Text("Ganador: ${tarea.ganador}") },
+        supportingContent = { Text("Resultado J1: ${tarea.resultadoJ1}, Resultado J2: ${tarea.resultadoJ2}") }
+    )
 }
 
 private fun cambiarImagen(eleccionCPU: Int): Int {
