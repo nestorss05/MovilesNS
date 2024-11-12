@@ -8,7 +8,7 @@ import androidx.room.Update;
 
 @Dao
 public interface TareasDao {
-    @Query("SELECT * FROM partidas")
+    @Query("SELECT * FROM partidas ORDER BY partidasGanadas desc LIMIT 10")
     suspend fun getTodo(): List<TareaEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -18,7 +18,10 @@ public interface TareasDao {
     suspend fun actualizar(tarea: TareaEntity)
 
     @Query("SELECT * FROM partidas WHERE username = :user")
-    suspend fun getNombre(user: String): List<TareaEntity>
+    suspend fun getContUser(user: String): TareaEntity
+
+    @Query("SELECT EXISTS(SELECT 1 FROM partidas WHERE username = :user)")
+    suspend fun getNombre(user: String): Boolean
 
     @Query("DELETE FROM PARTIDAS")
     suspend fun borrarTodo()

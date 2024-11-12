@@ -15,14 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -35,13 +33,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
-import com.nestorss.pptns.R
 import com.nestorss.pptns.ui.views.MainActivity.Companion.database
 import com.nestorss.pptns.dal.TareasDatabase
 import com.nestorss.pptns.dal.TareaEntity
@@ -49,6 +45,12 @@ import com.nestorss.pptns.ui.theme.PPTNSTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+import android.util.Log
+import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import com.nestorss.pptns.R
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -65,9 +67,6 @@ class MainActivity : ComponentActivity() {
             .build()
         enableEdgeToEdge()
         setContent {
-            val tareasViewModel: TareasVM = viewModel(
-                factory = TareasViewModelFactory(database.tareaDao())
-            )
             PPTNSTheme {
                 val navController = rememberNavController()
                 NavHost(
@@ -90,7 +89,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     composable("Puntuaciones") {
-                        Puntuaciones(navController = navController, tareasVM = tareasViewModel)
+                        Puntuaciones(navController = navController)
                     }
                 }
             }
@@ -166,7 +165,9 @@ fun Juego(navController: NavController, nombreJugador: String) {
                 Image(
                     painter = painterResource(id = idImage),
                     contentDescription = "Imagen editable de la CPU",
-                    modifier = Modifier.padding(16.dp) .size(128.dp),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .size(128.dp),
                 )
                 Text(
                     text = "CPU - $puntosCPU",
@@ -206,7 +207,9 @@ fun Juego(navController: NavController, nombreJugador: String) {
                                 prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope, nombreJugador)
                             }
                         },
-                        modifier = Modifier.padding(16.dp) .size(64.dp),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(64.dp),
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.piedra),
@@ -230,7 +233,9 @@ fun Juego(navController: NavController, nombreJugador: String) {
                                 prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope, nombreJugador)
                             }
                         },
-                        modifier = Modifier.padding(16.dp) .size(64.dp),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(64.dp),
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.papel),
@@ -254,7 +259,9 @@ fun Juego(navController: NavController, nombreJugador: String) {
                                 prepararGanador(puntosJ1, puntosCPU, navController, coroutineScope, nombreJugador)
                             }
                         },
-                        modifier = Modifier.padding(16.dp) .size(64.dp),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(64.dp),
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.tijera),
@@ -308,8 +315,12 @@ fun Gano(navController: NavController, ganador: String) {
 }
 
 @Composable
-fun Puntuaciones(navController: NavController, tareasVM: TareasVM) {
-    val tareas by tareasVM.todasLasTareas.collectAsState()
+fun Puntuaciones(navController: NavController) {
+    val coroutineScope = rememberCoroutineScope()
+    val listaJugadores = remember {mutableStateListOf<TareaEntity>()}
+    LaunchedEffect(Unit) {
+        listaJugadores.addAll(database.tareaDao().getTodo())
+    }
     Column (
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.Center,
@@ -317,13 +328,15 @@ fun Puntuaciones(navController: NavController, tareasVM: TareasVM) {
     ) {
         Spacer(modifier = Modifier.weight(0.00001f))
         LazyColumn {
-            items(tareas) { tarea ->
-                TareaItem(tarea)
+            items(items = listaJugadores) { jugador ->
+                TareaItem(jugador)
             }
         }
         Button(
             onClick = {
-                tareasVM.borrarTodasLasTareas()
+                coroutineScope.launch {
+                    database.tareaDao().borrarTodo()
+                }
             },
             modifier = Modifier.padding(16.dp),
         ) {
@@ -403,28 +416,34 @@ private fun declararGanador(puntosJ1: Int, puntosCPU: Int, username: String): St
     return ganador
 }
 
-private fun declararFila(puntosJ1: Int, puntosCPU: Int, username: String): TareaEntity {
-    val partida = TareaEntity()
-    partida.username = username
-    partida.partidasJugadas += 1
-    if (puntosJ1 > puntosCPU) {
-        partida.partidasGanadas += 1
+private fun declararFila(puntosJ1: Int, puntosCPU: Int, username: String, coroutineScope: CoroutineScope) {
+    coroutineScope.launch {
+        val noEstaVacio = database.tareaDao().getNombre(username)
+        if (noEstaVacio) {
+            val dbOg = database.tareaDao().getContUser(username)
+            dbOg.partidasJugadas += 1
+            if (puntosJ1 > puntosCPU) {
+                dbOg.partidasGanadas += 1
+            }
+            Log.d("partidas ganadas", dbOg.partidasGanadas.toString())
+            Log.d("partidas jugadas", dbOg.partidasJugadas.toString())
+            database.tareaDao().actualizar(dbOg)
+        } else {
+            val partida = TareaEntity()
+            partida.username = username
+            partida.partidasJugadas += 1
+            if (puntosJ1 > puntosCPU) {
+                partida.partidasGanadas += 1
+            }
+            database.tareaDao().insertar(partida)
+        }
+
     }
-    return partida
 }
 
 private fun prepararGanador(puntosJ1: Int, puntosCPU: Int, navController: NavController, coroutineScope: CoroutineScope, username: String) {
     val ganador = declararGanador(puntosJ1, puntosCPU, username)
-    val partida = declararFila(puntosJ1, puntosCPU, username)
-    coroutineScope.launch {
-        val resultados = database.tareaDao().getNombre(username)
-        if (resultados.isEmpty()) {
-            database.tareaDao().insertar(partida)
-        } else {
-            database.tareaDao().actualizar(partida)
-        }
-
-    }
+    declararFila(puntosJ1, puntosCPU, username, coroutineScope)
     navController.navigate("Gano/$ganador")
 }
 
