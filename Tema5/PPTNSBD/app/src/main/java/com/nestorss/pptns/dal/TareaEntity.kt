@@ -9,5 +9,6 @@ data class TareaEntity(
     var id: Long = 0,
     var username: String = "",
     var partidasJugadas: Int = 0,
-    var partidasGanadas: Int = 0
+    var partidasGanadas: Int = 0,
+    var luchasGanadas: Int = 0
 )
