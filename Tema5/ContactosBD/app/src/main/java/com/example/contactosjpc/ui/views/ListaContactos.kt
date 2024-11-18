@@ -50,8 +50,14 @@ import com.example.contactosjpc.dal.ContactoEnt
 import com.example.contactosjpc.dal.ContactosDB
 import com.example.contactosjpc.ui.views.ListaContactos.Companion.database
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.TextField
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -89,8 +95,9 @@ class ListaContactos : ComponentActivity() {
                             navController
                         )
                     }
-
-                    // TODO: Pantalla de añadir contacto
+                    composable("AñadirContacto") {
+                        AñadirContacto()
+                    }
                 }
             }
         }
@@ -122,7 +129,7 @@ fun ItemList(navController: NavController) {
             Spacer(modifier = Modifier.height(20.dp))
             Button(
                 onClick = {
-                    //navController.navigate("NuevoContacto")
+                    navController.navigate("AñadirContacto")
                 },
                 modifier = Modifier.padding(16.dp),
             ) {
@@ -147,7 +154,7 @@ fun ItemList(navController: NavController) {
         }
         Button(
             onClick = {
-                //navController.navigate("NuevoContacto")
+                navController.navigate("AñadirContacto")
             },
             modifier = Modifier.padding(16.dp),
         ) {
@@ -271,6 +278,106 @@ fun ContactoView(contacto: ContactoEnt) {
                     }
             )
         }
+    }
+}
+
+@Composable
+fun AñadirContacto() {
+    var usuario by remember { mutableStateOf("") }
+    var apellidos by remember { mutableStateOf("") }
+    var telefono by remember { mutableLongStateOf(0) }
+    var foto by remember { mutableStateOf("Foto 1") }
+
+    Column (
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 32.dp, vertical = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontalmente
+        verticalArrangement = Arrangement.Center // Centrado verticalmente
+    ) {
+        // Espaciador para centrar elementos
+        Spacer(modifier = Modifier.weight(0.00001f))
+        // Texto: inicio de sesion
+        Text(
+            text = "Añadir contacto",
+            fontSize = 36.sp,
+            modifier = Modifier.padding(8.dp),
+            textAlign = TextAlign.Center,
+        )
+        TextField(
+            value = usuario,
+            onValueChange = { usuario = it },
+            label = { Text("Usuario") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        )
+        TextField(
+            value = apellidos,
+            onValueChange = { apellidos = it },
+            label = { Text("Apellidos") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        )
+        TextField(
+            value = telefono.toString(),
+            onValueChange = { telefono = it.toLong() },
+            label = { Text("Telefono") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+        )
+        Text(
+            text = "Selecciona una foto:",
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .padding(vertical = 8.dp)
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+        ) {
+            RadioButton(
+                selected = foto == "Foto 1",
+                onClick = { foto = "Foto 1" }
+            )
+            Text(
+                text = "Foto 1",
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 8.dp)
+        ) {
+            RadioButton(
+                selected = foto == "Foto 2",
+                onClick = { foto = "Foto 2" }
+            )
+            Text(
+                text = "Foto 2",
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+        Button(
+            onClick = {
+                // TODO: añadir contacto a la BD
+            },
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = "Añadir contacto",
+                fontSize = 18.sp,
+            )
+        }
+        // Espaciador para centrar elementos
+        Spacer(modifier = Modifier.weight(0.00001f))
     }
 }
 
