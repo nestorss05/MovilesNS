@@ -55,6 +55,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -63,6 +64,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.contactosjpc.ui.theme.ContactosJPCTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 /**
  * Class listaContactos: lista de contactos
@@ -96,7 +99,9 @@ class ListaContactos : ComponentActivity() {
                         )
                     }
                     composable("AñadirContacto") {
-                        AñadirContacto()
+                        AniadirContacto(
+                            navController
+                        )
                     }
                 }
             }
@@ -109,6 +114,7 @@ class ListaContactos : ComponentActivity() {
  */
 @Composable
 fun ItemList(navController: NavController) {
+
     val listaContactos = remember { mutableStateListOf<ContactoEnt>() }
     LaunchedEffect(Unit) {
         listaContactos.addAll(database.contactoDao().getTodo())
@@ -142,26 +148,30 @@ fun ItemList(navController: NavController) {
             Spacer(modifier = Modifier.weight(0.00001f))
         }
     } else {
-        // LazyVerticalGrid para mostrar elementos en dos columnas
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2), // Establece el número de columnas (2)
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp)
-        ) {
-            items(listaContactos) { contacto ->
-                ContactoView(contacto) // Card con toda la informacion del contacto
+
+        Column {
+            Button(
+                onClick = {
+                    navController.navigate("AñadirContacto")
+                },
+                modifier = Modifier.padding(16.dp),
+            ) {
+                Text(
+                    text = "Añadir contacto",
+                    fontSize = 18.sp,
+                )
             }
-        }
-        Button(
-            onClick = {
-                navController.navigate("AñadirContacto")
-            },
-            modifier = Modifier.padding(16.dp),
-        ) {
-            Text(
-                text = "Añadir contacto",
-                fontSize = 18.sp,
-            )
+
+            // LazyVerticalGrid para mostrar elementos en dos columnas
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2), // Establece el número de columnas (2)
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp)
+            ) {
+                items(listaContactos) { contacto ->
+                    ContactoView(contacto) // Card con toda la informacion del contacto
+                }
+            }
         }
     }
 }
@@ -176,9 +186,9 @@ fun ContactoView(contacto: ContactoEnt) {
     // var context: contexto de la aplicacion
     val context = LocalContext.current
 
-    // var foto: foto de un hombre o una mujer dependiendo del sexo del contacto
+    // var foto: foto de un hombre o una mujer dependiendo de la foto escogida
     var foto = R.drawable.muiller
-        if (contacto.foto == "M") {
+        if (contacto.foto == "Foto 1") {
             foto = R.drawable.onvre
         }
 
@@ -282,7 +292,14 @@ fun ContactoView(contacto: ContactoEnt) {
 }
 
 @Composable
-fun AñadirContacto() {
+fun AniadirContacto(navController: NavController) {
+
+    // var context: contexto de la aplicacion
+    val context = LocalContext.current
+
+    // CoroutineScope para ejecutar funciones de BD
+    val coroutineScope = rememberCoroutineScope()
+
     var usuario by remember { mutableStateOf("") }
     var apellidos by remember { mutableStateOf("") }
     var telefono by remember { mutableLongStateOf(0) }
@@ -367,12 +384,23 @@ fun AñadirContacto() {
         }
         Button(
             onClick = {
-                // TODO: añadir contacto a la BD
+                aniadirFila(usuario, apellidos, telefono, foto, coroutineScope, context)
             },
             modifier = Modifier.padding(16.dp),
         ) {
             Text(
                 text = "Añadir contacto",
+                fontSize = 18.sp,
+            )
+        }
+        Button(
+            onClick = {
+                navController.navigate("Contactos")
+            },
+            modifier = Modifier.padding(16.dp),
+        ) {
+            Text(
+                text = "Volver",
                 fontSize = 18.sp,
             )
         }
@@ -391,5 +419,23 @@ private fun llamar(context: android.content.Context, numTel: String) {
         context.startActivity(intent)
     } else {
         Toast.makeText(context, "ERROR: el sistema no tiene permisos de llamada. La llamada no se realizara.", Toast.LENGTH_SHORT).show()
+    }
+}
+
+private fun aniadirFila(nombre: String, apellidos: String, telefono: Long, foto: String, coroutineScope: CoroutineScope, context: android.content.Context) {
+    coroutineScope.launch {
+        if (database.contactoDao().getNombre(nombre)) {
+            Toast.makeText(context, "ERROR: el contacto ya existe.", Toast.LENGTH_SHORT).show()
+        } else if (nombre == "" || apellidos == "" || telefono.toInt() == 0) {
+            Toast.makeText(context, "ERROR: uno de los campos estan vacios.", Toast.LENGTH_SHORT).show()
+        } else {
+            val contacto = ContactoEnt()
+            contacto.nombre = nombre
+            contacto.apellidos = apellidos
+            contacto.telefono = telefono
+            contacto.foto = foto
+            database.contactoDao().insertar(contacto)
+            Toast.makeText(context, "El contacto se ha añadido correctamente.", Toast.LENGTH_SHORT).show()
+        }
     }
 }

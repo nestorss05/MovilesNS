@@ -12,4 +12,7 @@ interface ContactoDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertar(contacto: ContactoEnt): Long
+
+    @Query("SELECT EXISTS(SELECT 1 FROM contactos WHERE nombre = :nombre)")
+    suspend fun getNombre(nombre: String): Boolean
 }
