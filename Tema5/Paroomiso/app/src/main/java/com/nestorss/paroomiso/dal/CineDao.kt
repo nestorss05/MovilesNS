@@ -11,14 +11,17 @@ interface CineDao {
     @Query("SELECT * FROM clientes")
     suspend fun getTodosClientes(): List<ClientesEnt>
 
-    @Query("SELECT * FROM configuracion")
-    suspend fun getTodosConfiguracion(): List<ConfiguracionEnt>
+    @Query("SELECT * FROM configuracion LIMIT 1")
+    suspend fun getTodosConfiguracion(): ConfiguracionEnt
 
     @Query("SELECT COUNT(*) FROM clientes WHERE palomitas = 1")
     suspend fun getClientesConPalomitas(): Int
 
     @Query("SELECT precioPalomitas FROM configuracion LIMIT 1")
     suspend fun getPrecioPalomitas(): Float
+
+    @Query("SELECT numSalas FROM configuracion LIMIT 1")
+    suspend fun getNumSalas(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarCliente(cliente: ClientesEnt): Long

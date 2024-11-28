@@ -1,5 +1,6 @@
 package com.nestorss.paroomiso
 
+import android.content.Context
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -12,9 +13,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -47,7 +50,9 @@ import com.nestorss.paroomiso.dal.ClientesEnt
 import com.nestorss.paroomiso.dal.ConfiguracionEnt
 import com.nestorss.paroomiso.ui.theme.ParoomisoTheme
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -157,11 +162,9 @@ fun Configuracion(modifier: Modifier, navController: NavController) {
         verticalArrangement = Arrangement.Center // Centrado verticalmente
     ) {
 
-        // Botonera
-        Botonera(navController = navController, "configuracion")
-
         // Espaciador que centra el texto (este lo echa para arriba)
         Spacer(modifier = Modifier.weight(0.00001f))
+        Spacer(modifier = Modifier.height(200.dp))
 
         var salasLocal by rememberSaveable { mutableIntStateOf(0) }
         var asientosLocal by rememberSaveable { mutableIntStateOf(0) }
@@ -214,6 +217,9 @@ fun Configuracion(modifier: Modifier, navController: NavController) {
         // Espaciador que centra el texto (este lo echa para abajo)
         Spacer(modifier = Modifier.weight(0.00001f))
 
+        // Botonera
+        Botonera(navController = navController, "configuracion")
+
     }
 }
 
@@ -238,35 +244,52 @@ fun Salas(modifier: Modifier, navController: NavController) {
         verticalArrangement = Arrangement.Center // Centrado verticalmente
     ) {
 
-        var id = 0
-        var listaClientes: List<ClientesEnt> = listOf()
-
-        // Botonera
-        Botonera(navController = navController, "salas")
+        var idSala = 0
+        var salaElegida: Int
+        var palomitas: Int
+        var listaClientes = mutableListOf<ClientesEnt>()
+        var sala = ConfiguracionEnt()
 
         // Espaciador que centra el texto (este lo echa para abajo)
         Spacer(modifier = Modifier.weight(0.00001f))
+        Spacer(modifier = Modifier.height(200.dp))
 
-        // TODO: Pantalla 2
+        // TODO: Arreglar Pantalla 2
 
         LaunchedEffect(Unit) {
+            sala = database.cineDao().getTodosConfiguracion()
             while (listaClientes.size <= 100) {
-                val persAniadir = (1..5).random()
-                for(per: ClientesEnt in listaClientes) {
-                    
+                val cantPersAniadir = (1..5).random()
+                val salaMax = database.cineDao().getNumSalas()
+                for (i in 1..cantPersAniadir) {
+                    val cliente = ClientesEnt()
+                    salaElegida = Random.nextInt(0, salaMax+1)
+                    palomitas = Random.nextInt(0, 2)
+                    cliente.salaElegida = salaElegida
+                    cliente.palomitas = palomitas
+                    listaClientes.add(cliente)
                 }
+                delay(1200)
             }
         }
 
-        LazyRow(
+        Row(
             modifier = Modifier.fillMaxSize()
         ) {
-            id++
-            // TODO: SalaView
+            for (i in 1..sala.numSalas + 1) {
+                idSala++
+                SalaView(
+                    sala,
+                    id = idSala
+                )
+            }
         }
 
         // Espaciador que centra el texto (este lo echa para arriba)
         Spacer(modifier = Modifier.weight(0.00001f))
+
+        // Botonera
+        Botonera(navController = navController, "salas")
 
     }
 }
@@ -304,9 +327,6 @@ fun Asistencia(modifier: Modifier, navController: NavController) {
         verticalArrangement = Arrangement.Center // Centrado verticalmente
     ) {
 
-        // Botonera
-        Botonera(navController = navController, "asistencia")
-
         // Variables que se mostraran por pantalla
         var asistencia by rememberSaveable { mutableIntStateOf(0) }
         var nPersonas by rememberSaveable { mutableIntStateOf(0) }
@@ -318,6 +338,7 @@ fun Asistencia(modifier: Modifier, navController: NavController) {
 
         // Espaciador que centra el texto (este lo echa para abajo)
         Spacer(modifier = Modifier.weight(0.00001f))
+        Spacer(modifier = Modifier.height(200.dp))
 
         Text(
             text = "Resumen de asistencia: $asistencia",
@@ -336,6 +357,9 @@ fun Asistencia(modifier: Modifier, navController: NavController) {
 
         // Espaciador que centra el texto (este lo echa para arriba)
         Spacer(modifier = Modifier.weight(0.00001f))
+
+        // Botonera
+        Botonera(navController = navController, "asistencia")
 
     }
 }
@@ -404,7 +428,7 @@ fun Detalles(modifier: Modifier, navController: NavController) {
 /**
  * Funcion toaster: manda toasts a base del codigo que recibe
  */
-private fun toaster(context: android.content.Context, code: Int) {
+private fun toaster(context: Context, code: Int) {
 
     // mensaje: variable donde se guaradara el mensaje a ser mostrado por el toast
     var mensaje = "";

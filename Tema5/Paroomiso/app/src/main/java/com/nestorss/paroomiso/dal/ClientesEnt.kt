@@ -8,5 +8,5 @@ data class ClientesEnt(
     @PrimaryKey(autoGenerate = true)
     var id: Long = 0,
     var salaElegida: Int = 0,
-    var palomitas: Int,
+    var palomitas: Int = 0,
 )
