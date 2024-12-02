@@ -1,0 +1,90 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "17bb6808070e3c6832c295552d0bd3cd",
+    "entities": [
+      {
+        "tableName": "jugadores",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `nombre` TEXT NOT NULL, `numElegido1` INTEGER NOT NULL, `numElegido2` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "nombre",
+            "columnName": "nombre",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numElegido1",
+            "columnName": "numElegido1",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numElegido2",
+            "columnName": "numElegido2",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "sorteos",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`idSorteo` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `numGanador1` INTEGER NOT NULL, `numGanador2` INTEGER NOT NULL, `idGanador` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "idSorteo",
+            "columnName": "idSorteo",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numGanador1",
+            "columnName": "numGanador1",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "numGanador2",
+            "columnName": "numGanador2",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "idGanador",
+            "columnName": "idGanador",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "idSorteo"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '17bb6808070e3c6832c295552d0bd3cd')"
+    ]
+  }
+}
