@@ -5,6 +5,8 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
+import com.nestorss.paroomiso.ent.ClientesEnt
+import com.nestorss.paroomiso.ent.ConfiguracionEnt
 
 @Dao
 interface CineDao {
@@ -17,11 +19,23 @@ interface CineDao {
     @Query("SELECT COUNT(*) FROM clientes WHERE palomitas = 1")
     suspend fun getClientesConPalomitas(): Int
 
+    @Query("SELECT COUNT(*) FROM clientes")
+    suspend fun getCantClientes(): Int
+
+    @Query("SELECT COUNT(*) FROM clientes WHERE salaElegida != 0")
+    suspend fun getClientesDentro(): Int
+
+    @Query("SELECT COUNT(*) FROM clientes WHERE salaElegida = 0")
+    suspend fun getClientesFuera(): Int
+
     @Query("SELECT precioPalomitas FROM configuracion LIMIT 1")
     suspend fun getPrecioPalomitas(): Float
 
     @Query("SELECT numSalas FROM configuracion LIMIT 1")
     suspend fun getNumSalas(): Int
+
+    @Query("SELECT numAsientos FROM configuracion LIMIT 1")
+    suspend fun getNumAsientos(): Int
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarCliente(cliente: ClientesEnt): Long

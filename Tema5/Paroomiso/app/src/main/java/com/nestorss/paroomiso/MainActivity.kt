@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -29,11 +29,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -46,8 +48,9 @@ import androidx.room.Room
 import com.nestorss.paroomiso.MainActivity.Companion.conf
 import com.nestorss.paroomiso.MainActivity.Companion.database
 import com.nestorss.paroomiso.dal.CineDB
-import com.nestorss.paroomiso.dal.ClientesEnt
-import com.nestorss.paroomiso.dal.ConfiguracionEnt
+import com.nestorss.paroomiso.ent.ClientesEnt
+import com.nestorss.paroomiso.ent.ConfiguracionEnt
+import com.nestorss.paroomiso.ent.Sala
 import com.nestorss.paroomiso.ui.theme.ParoomisoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -96,10 +99,11 @@ class MainActivity : ComponentActivity() {
                                 navController = navController
                             )
                         }
-                        composable("detalles") {
+                        composable("detalles/{salaId}") { backStackEntry ->
                             Detalles(
                                 modifier = Modifier.padding(innerPadding),
-                                navController = navController
+                                navController = navController,
+                                salaId = backStackEntry.arguments?.getString("salaId")?.toInt() ?:0
                             )
                         }
                     }
@@ -225,6 +229,8 @@ fun Configuracion(modifier: Modifier, navController: NavController) {
 
 fun pasarValoresBD(coroutineScope: CoroutineScope, nSalas: Int, nAsientos: Int, precioPalomitas: Float) {
     coroutineScope.launch {
+        database.cineDao().borrarConfiguracion()
+        database.cineDao().borrarClientes()
         conf.numSalas = nSalas
         conf.numAsientos = nAsientos
         conf.precioPalomitas = precioPalomitas
@@ -235,30 +241,25 @@ fun pasarValoresBD(coroutineScope: CoroutineScope, nSalas: Int, nAsientos: Int, 
 @Composable
 fun Salas(modifier: Modifier, navController: NavController) {
 
-    // CoroutineScope para ejecutar funciones de BD
-    val coroutineScope = rememberCoroutineScope()
-
     Column (
         modifier = modifier .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontalmente
         verticalArrangement = Arrangement.Center // Centrado verticalmente
     ) {
 
-        var idSala = 0
+        // Variables
         var salaElegida: Int
         var palomitas: Int
-        var listaClientes = mutableListOf<ClientesEnt>()
-        var sala = ConfiguracionEnt()
+        var numClientes = 0
+        var numSalas = 0
+        var numAsientos = 0
+        val salas = remember {List(numSalas) {Sala((it + 1).toLong(), 0, numAsientos)} }
 
-        // Espaciador que centra el texto (este lo echa para abajo)
-        Spacer(modifier = Modifier.weight(0.00001f))
-        Spacer(modifier = Modifier.height(200.dp))
-
-        // TODO: Arreglar Pantalla 2
-
+        // Este trozo de codigo asigna la sala elegida y las palomitas de cada cliente y los mete en un listado de clientes
         LaunchedEffect(Unit) {
-            sala = database.cineDao().getTodosConfiguracion()
-            while (listaClientes.size <= 100) {
+            numSalas = database.cineDao().getNumSalas()
+            numAsientos = database.cineDao().getNumAsientos()
+            while (numClientes < 100) {
                 val cantPersAniadir = (1..5).random()
                 val salaMax = database.cineDao().getNumSalas()
                 for (i in 1..cantPersAniadir) {
@@ -267,59 +268,54 @@ fun Salas(modifier: Modifier, navController: NavController) {
                     palomitas = Random.nextInt(0, 2)
                     cliente.salaElegida = salaElegida
                     cliente.palomitas = palomitas
-                    listaClientes.add(cliente)
+                    database.cineDao().insertarCliente(cliente)
+                    numClientes++
                 }
                 delay(1200)
             }
         }
 
-        Row(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            for (i in 1..sala.numSalas + 1) {
-                idSala++
-                SalaView(
-                    sala,
-                    id = idSala
-                )
+        // TODO: Arreglar Pantalla 2 (mete los clientes, pero no muestra las salas)
+        Column {
+            salas.forEach { sala ->
+                SalaItem(sala) {
+                    navController.navigate("detalles/${sala.numeroSala}")
+                }
             }
         }
 
-        // Espaciador que centra el texto (este lo echa para arriba)
-        Spacer(modifier = Modifier.weight(0.00001f))
-
-        // Botonera
+        // Botonera (debe estar arriba)
         Botonera(navController = navController, "salas")
 
     }
 }
 
 @Composable
-fun SalaView(cfg: ConfiguracionEnt, id: Int) {
-    val i = id
-    val asientos = cfg.numAsientos
-    val precioPalomitas = cfg.precioPalomitas
-    Row {
-        Text (
-            text = i.toString(),
-            fontSize = 24.sp
+fun SalaItem(sala: Sala, onClick: () -> Unit) {
+    val color = when {
+        sala.aforoActual >= sala.aforoMaximo -> Color.Red
+        sala.aforoActual > sala.aforoMaximo * 0.9 -> Color(0xFFFFCCCC) // Rosado
+        sala.aforoActual > sala.aforoMaximo * 0.66 -> Color(0xFFFFF1A1) // Amarillo
+        else -> Color.Unspecified
+    }
+
+    Row(modifier = Modifier
+        .fillMaxWidth()
+        .clickable {onClick()}
+        .background(color)
+        .padding(16.dp)
+    ) {
+        Text(
+            text = "Sala ${sala.numeroSala}"
         )
-        Text (
-            text = asientos.toString(),
-            fontSize = 24.sp
-        )
-        Text (
-            text = precioPalomitas.toString(),
-            fontSize = 24.sp
+        Text(
+            text = "${sala.aforoActual}/${sala.aforoMaximo}",
         )
     }
 }
 
 @Composable
 fun Asistencia(modifier: Modifier, navController: NavController) {
-
-    // CoroutineScope para ejecutar funciones de BD
-    val coroutineScope = rememberCoroutineScope()
 
     Column (
         modifier = modifier .fillMaxWidth(),
@@ -329,12 +325,17 @@ fun Asistencia(modifier: Modifier, navController: NavController) {
 
         // Variables que se mostraran por pantalla
         var asistencia by rememberSaveable { mutableIntStateOf(0) }
-        var nPersonas by rememberSaveable { mutableIntStateOf(0) }
+        var clientesRechazados by rememberSaveable { mutableIntStateOf(0) }
         var precioPalomitas by rememberSaveable { mutableFloatStateOf(0f) }
 
         // Establece los valores de las variables
-        // TODO: Establecer valores de asistencia y nPersonas
-        precioPalomitas = definirPrecioPalomitas(coroutineScope)
+        LaunchedEffect(Unit) {
+            asistencia = database.cineDao().getClientesDentro()
+            clientesRechazados = database.cineDao().getClientesFuera()
+            val cantidad = database.cineDao().getClientesConPalomitas()
+            val precio = database.cineDao().getPrecioPalomitas()
+            precioPalomitas = cantidad * precio
+        }
 
         // Espaciador que centra el texto (este lo echa para abajo)
         Spacer(modifier = Modifier.weight(0.00001f))
@@ -346,7 +347,7 @@ fun Asistencia(modifier: Modifier, navController: NavController) {
         )
 
         Text(
-            text = "Nº de personas sin asistir: $nPersonas",
+            text = "Nº de personas sin asistir: $clientesRechazados",
             fontSize = 18.sp,
         )
 
@@ -364,18 +365,8 @@ fun Asistencia(modifier: Modifier, navController: NavController) {
     }
 }
 
-fun definirPrecioPalomitas(coroutineScope: CoroutineScope): Float {
-    var res = 0f
-    coroutineScope.launch {
-        val cantidad = database.cineDao().getClientesConPalomitas()
-        val precio = database.cineDao().getPrecioPalomitas()
-        res = precio * cantidad
-    }
-    return res
-}
-
 @Composable
-fun Detalles(modifier: Modifier, navController: NavController) {
+fun Detalles(modifier: Modifier, navController: NavController, salaId: Int) {
     Column (
         modifier = modifier .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontalmente

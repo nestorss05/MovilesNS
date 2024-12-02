@@ -1,4 +1,4 @@
-package com.nestorss.paroomiso.dal
+package com.nestorss.paroomiso.ent
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
