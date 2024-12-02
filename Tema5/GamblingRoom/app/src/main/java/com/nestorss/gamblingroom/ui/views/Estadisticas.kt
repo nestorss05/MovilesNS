@@ -17,6 +17,11 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -43,6 +48,18 @@ class Estadisticas : ComponentActivity() {
 @Composable
 fun Estadisticas(modifier: Modifier = Modifier, navController: NavController) {
 
+    val ganadores = rememberSaveable { mutableStateOf<Map<tJugadores, Int>>(emptyMap()) }
+
+    LaunchedEffect(Unit) {
+        val jugadas = database.sorteoDao().getTodo()
+        val ganadoresTemp = mutableMapOf<tJugadores, Int>()
+        for (jugada in jugadas) {
+            val jugador = database.jugadorDao().getJugador(jugada.idGanador.toLong())
+            ganadoresTemp[jugador] = ganadoresTemp.getOrDefault(jugador, 0) + 1
+        }
+        ganadores.value = ganadoresTemp
+    }
+
     Column(
         modifier = modifier .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally, // Centrado horizontalmente
@@ -60,23 +77,13 @@ fun Estadisticas(modifier: Modifier = Modifier, navController: NavController) {
             textAlign = TextAlign.Center,
         )
 
-        val ganadores: MutableList<tJugadores> = mutableListOf()
-
-        LaunchedEffect(Unit) {
-            val jugadas = database.sorteoDao().getTodo().toMutableList()
-            for (jugada in jugadas) {
-                val jugador = database.jugadorDao().getJugador(jugada.idGanador.toLong())
-                ganadores.add(jugador)
-            }
-        }
-
         LazyColumn (
             modifier = Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .padding(16.dp)
         ) {
-            items(ganadores) { ganador ->
-                EstadisticaView(ganador)
+            items(ganadores.value.entries.toList()) { (ganador, vecesGanadas) ->
+                EstadisticaView(ganador, vecesGanadas)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
         }
@@ -92,19 +99,19 @@ fun Estadisticas(modifier: Modifier = Modifier, navController: NavController) {
 }
 
 @Composable
-fun EstadisticaView(jugador: tJugadores) {
+fun EstadisticaView(jugador: tJugadores, vecesGanadas: Int) {
     Row {
-        var vecesGanadas = 0
-        LaunchedEffect(Unit) {
-            vecesGanadas = database.sorteoDao().getVecesGanadas(jugador.id)
-        }
         Text (
             text = jugador.nombre,
-            fontSize = 16.sp
+            fontSize = 16.sp,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         )
         Text (
             text = vecesGanadas.toString(),
-            fontSize = 16.sp
+            fontSize = 16.sp,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
 }

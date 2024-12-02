@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
@@ -50,7 +51,6 @@ import com.nestorss.paroomiso.MainActivity.Companion.database
 import com.nestorss.paroomiso.dal.CineDB
 import com.nestorss.paroomiso.ent.ClientesEnt
 import com.nestorss.paroomiso.ent.ConfiguracionEnt
-import com.nestorss.paroomiso.ent.Sala
 import com.nestorss.paroomiso.ui.theme.ParoomisoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -276,10 +276,20 @@ fun Salas(modifier: Modifier, navController: NavController) {
         }
 
         // TODO: Arreglar Pantalla 2 (mete los clientes, pero no muestra las salas)
-        Column {
-            salas.forEach { sala ->
-                SalaItem(sala) {
-                    navController.navigate("detalles/${sala.numeroSala}")
+        Column (
+            verticalArrangement = Arrangement.Top,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize()
+        ){
+            Text(
+                text = "Lista de Salas:",
+                fontSize = 30.sp
+            )
+            LazyColumn (
+                modifier = Modifier.padding(10.dp)
+            ) {
+                items(conf.numSalas) { index ->
+                    SalaItem()
                 }
             }
         }

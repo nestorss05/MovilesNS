@@ -1,22 +1,19 @@
-package com.nestorss.gamblingroom
+package com.nestorss.paroomiso2
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -25,50 +22,62 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.room.Room
-import com.nestorss.gamblingroom.dal.GamblingDB
-import com.nestorss.gamblingroom.ui.theme.GamblingRoomTheme
-import com.nestorss.gamblingroom.ui.views.Estadisticas
-import com.nestorss.gamblingroom.ui.views.Form
-import com.nestorss.gamblingroom.ui.views.Resultados
+import com.nestorss.paroomiso2.dal.ParoomisoDB2
+import com.nestorss.paroomiso2.ui.theme.Paroomiso2Theme
+import com.nestorss.paroomiso2.ui.views.Configuracion
+import com.nestorss.paroomiso2.ui.views.DetallesSala
+import com.nestorss.paroomiso2.ui.views.Resumen
+import com.nestorss.paroomiso2.ui.views.Salas
+import kotlinx.coroutines.CoroutineScope
 
 class MainActivity : ComponentActivity() {
     companion object {
-        lateinit var database: GamblingDB
+        lateinit var database: ParoomisoDB2
+        lateinit var coroutine: CoroutineScope
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         database = Room.databaseBuilder(
             applicationContext,
-            GamblingDB::class.java,
-            "gambling-db"
+            ParoomisoDB2::class.java,
+            "paroomiso-db"
         )
             .fallbackToDestructiveMigration()
             .build()
         enableEdgeToEdge()
         setContent {
-            GamblingRoomTheme {
+            coroutine = rememberCoroutineScope()
+            Paroomiso2Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     val navController = rememberNavController()
                     NavHost(
                         navController = navController,
-                        startDestination = "form"
+                        startDestination = "configuracion"
                     ) {
-                        composable("form") {
-                            Form (
+                        composable("configuracion") {
+                            Configuracion (
                                 modifier = Modifier.padding(innerPadding),
                                 navController = navController
                             )
                         }
-                        composable("resultados") {
-                            Resultados (
+                        composable("salas") {
+                            Salas (
                                 modifier = Modifier.padding(innerPadding),
                                 navController = navController
                             )
                         }
-                        composable("estadisticas") {
-                            Estadisticas (
+                        composable("resumen") {
+                            Resumen (
                                 modifier = Modifier.padding(innerPadding),
                                 navController = navController
+                            )
+                        }
+                        composable("detallesala/{idSala}") { backStackEntry ->
+                            var id = backStackEntry.arguments?.getString("idSala") ?:"0"
+                            DetallesSala (
+                                modifier = Modifier.padding(innerPadding),
+                                navController = navController,
+                                idSala = id.toInt()
                             )
                         }
                     }
@@ -86,22 +95,30 @@ fun Botonera(navController: NavController, pantallaActual: String) {
             .padding(8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically
-        ) {
+    ) {
         Button(
-            enabled = pantallaActual != "resultados",
+            enabled = pantallaActual != "configuracion",
             onClick = {
-                navController.navigate("resultados")
+                navController.navigate("configuracion")
             }
         ) {
-            Text("Apuesta")
+            Text("Configuracion")
         }
         Button(
-            enabled = pantallaActual != "estadisticas",
+            enabled = pantallaActual != "salas",
             onClick = {
-                navController.navigate("estadisticas")
+                navController.navigate("salas")
             }
         ) {
-            Text("Estadisticas")
+            Text("Salas")
+        }
+        Button(
+            enabled = pantallaActual != "resumen",
+            onClick = {
+                navController.navigate("resumen")
+            }
+        ) {
+            Text("Resumen")
         }
     }
 }

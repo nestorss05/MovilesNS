@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Update
 import com.nestorss.gamblingroom.ent.tSorteos
 
 @Dao
@@ -16,4 +17,5 @@ interface SorteosDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertarJugada(sorteo: tSorteos): Long
+
 }
